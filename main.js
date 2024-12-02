@@ -30,6 +30,15 @@ const bird = {
     update() {
         velocity += gravity;
         this.y += velocity;
+
+        // Проверка на границы канваса
+        if (this.y + this.height > canvas.height) {
+            this.y = canvas.height - this.height;
+            velocity = 0;
+        } else if (this.y < 0) {
+            this.y = 0;
+            velocity = 0;
+        }
     },
     draw() {
         ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
@@ -38,7 +47,7 @@ const bird = {
 
 bird.image.src = 'image.png'; // Птица
 
-// Изображение для труб (один файл для обоих)
+// Изображение для труб
 const pipeImage = new Image();
 pipeImage.src = 'image.png'; // Используем одно изображение для труб
 
@@ -52,25 +61,21 @@ let passedPipes = 0; // Переменная для отслеживания п�
 // Генерация новых труб с улучшенной логикой
 function generatePipe() {
     const pipeHeight = Math.floor(Math.random() * (canvas.height - pipeGap));
-    
-    // Мы генерируем верхнюю трубу на случайной высоте
     const topPipeHeight = pipeHeight;
-    // Нижнюю трубу будем генерировать, чтобы между трубами было достаточно места
     const bottomPipeHeight = canvas.height - pipeGap - topPipeHeight;
-    
+
     pipes.push({
-        x: canvas.width + pipeSpacing, // Интервал между трубами по оси X
+        x: canvas.width + pipeSpacing,
         top: topPipeHeight,
         bottom: bottomPipeHeight,
+        passed: false, // Флаг, чтобы отслеживать, пройдена ли труба
     });
 }
 
 // Отрисовка труб
 function drawPipes() {
     pipes.forEach(pipe => {
-        // Отрисовываем верхнюю трубу
         ctx.drawImage(pipeImage, pipe.x, 0, pipeWidth, pipe.top);
-        // Отрисовываем нижнюю трубу
         ctx.drawImage(pipeImage, pipe.x, canvas.height - pipe.bottom, pipeWidth, pipe.bottom);
     });
 }
@@ -78,13 +83,13 @@ function drawPipes() {
 // Обновление положения труб
 function updatePipes() {
     pipes.forEach(pipe => {
-        pipe.x -= 2; // Двигаем трубы влево
-    });
+        pipe.x -= 2;
 
-    // Убираем трубы, которые уже вышли за экран
-    if (pipes[0] && pipes[0].x < -pipeWidth) {
-        pipes.shift();
-    }
+        // Убираем трубы, которые уже вышли за экран
+        if (pipe.x < -pipeWidth) {
+            pipes.shift();
+        }
+    });
 }
 
 // Проверка на столкновение
@@ -112,7 +117,7 @@ function gameOver() {
 function resetGame() {
     bird.y = canvas.height / 2;
     pipes.length = 0;
-    passedPipes = 0; // Сбрасываем счётчик пройденных труб
+    passedPipes = 0;
     velocity = 0;
     score = 0;
     isGameOver = false;
@@ -122,25 +127,17 @@ function resetGame() {
 
 function drawScore() {
     ctx.font = "40px Smooth Relief";
-
-    // Добавление обводки
-    const offsetX = 200; // Отступ по горизонтали
-    const offsetY = 50; // Отступ по вертикали
-    
-    // Настроим обводку
-    ctx.lineWidth = 15; // Толщина обводки
-    ctx.strokeStyle = "#FFF"; // Цвет обводки
-    ctx.strokeText("Счёт: " + score, offsetX, offsetY); // Рисуем обводку текста
-
-    // Рисуем сам текст (с цветом)
-    ctx.fillStyle = "#0000000"; // Цвет текста
-    ctx.fillText("Счёт: " + score, offsetX, offsetY); // Рисуем сам текст
+    ctx.lineWidth = 15;
+    ctx.strokeStyle = "#FFF";
+    ctx.strokeText("Счёт: " + score, 200, 50);
+    ctx.fillStyle = "#000";
+    ctx.fillText("Счёт: " + score, 200, 50);
 }
-
 
 function startGame() {
     gameStarted = true;
     startScreen.style.display = "none";
+    startMusic();
     gameLoop();
 }
 
@@ -155,12 +152,11 @@ function gameLoop() {
     updatePipes();
     checkCollision();
     drawScore();
-    
-    // Проверяем, пересекла ли птица трубу и увеличиваем счёт
+
     pipes.forEach(pipe => {
         if (!pipe.passed && bird.x + bird.width > pipe.x + pipeWidth) {
             score++;
-            pipe.passed = true; // Помечаем трубу как пройденную
+            pipe.passed = true;
         }
     });
 
@@ -190,36 +186,26 @@ window.addEventListener("click", event => {
         bird.jump();
     }
 });
-// Создаем объект Audio для трека
-const backgroundMusic = new Audio('music.mp3');
-backgroundMusic.loop = true; // Включаем зацикливание музыки
-backgroundMusic.volume = 0.2; // Устанавливаем громкость (от 0 до 1)
 
-// Функция для запуска музыки
+// Настройка и запуск музыки
+const backgroundMusic = new Audio('music.mp3');
+backgroundMusic.loop = true;
+backgroundMusic.volume = 0.2;
+
 function startMusic() {
     backgroundMusic.play().catch(error => {
         console.error("Ошибка воспроизведения музыки:", error);
     });
 }
 
-// Функция для остановки музыки
 function stopMusic() {
     backgroundMusic.pause();
-    backgroundMusic.currentTime = 0; // Сбрасываем трек на начало
+    backgroundMusic.currentTime = 0;
 }
 
-// Вызов воспроизведения трека при старте игры
-function startGame() {
-    gameStarted = true;
-    startScreen.style.display = "none";
-    startMusic(); // Начинаем воспроизведение музыки
-    gameLoop();
-}
-
-// Остановка музыки при завершении игры
 function gameOver() {
     isGameOver = true;
     gameOverScreen.style.display = "block";
-    stopMusic(); // Останавливаем музыку
+    stopMusic();
     cancelAnimationFrame(frameId);
 }
