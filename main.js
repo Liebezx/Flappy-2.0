@@ -13,7 +13,7 @@ let gameStarted = false;
 let isGameOver = false;
 let frames = 0;
 let score = 0;
-const gravity = 0.4; // Сила гравитации
+const gravity = 0.3; // Сила гравитации
 const jumpPower = -6; // Сила прыжка
 let velocity = 0;
 
